@@ -1,8 +1,11 @@
 # Ein Discord-Bot um den Status eines Minecraft servers und die Spieler-Liste in einen discord chat zu schreiben.
 #
 # @author (FireIP)
-# @version (0.13.2)
+# @version (0.13.3)
 #
+#
+#	---0.13.3---
+#	fixed looping online offline dns
 #
 #	---0.13.2---
 #	removed tum-v6.serveminecraft.net
@@ -113,11 +116,6 @@ async def on_ready():
         SSchannel.append([])
         for i in range(len(SSchannelID[s])):
             SSchannel[s].append(client.get_channel(SSchannelID[s][i]))
-
-
-    # for s in range(len(SSchannelID)):
-    #     for i in range(len(SSchannelID[s])):
-    #         SSchannel[s][i] = client.get_channel(SSchannelID[s][i])
 
     sendToAll("Bot is online")
     print("Bot is online and connected to Discord")
@@ -365,13 +363,15 @@ def queryThread():
             try:
                 dnsServ[actI].status(tries=5)
             except:
-                if dnsStat[actI]:
+                if dnsStat[actI] == True:
                     sendToAll(dns[actI] + " is offline.")
                     dnsStat[actI] = False
+                    time.sleep(1)
             else:
-                if not dnsStat[actI]:
+                if dnsStat[actI] == False:
                     sendToAll(dns[actI] + " is online.")
                     dnsStat[actI] = True
+                    time.sleep(1)
 
         try:
             query = server.query(tries=1)
@@ -415,6 +415,7 @@ def queryThread():
 
         finally:
             # timeout.cancel()
+            time.sleep(5)
             qStat = True
 
 
@@ -432,11 +433,11 @@ def selfDiagnose():
         if q:
             qStat = False
 
-            time.sleep(15)
+            time.sleep(20)
 
             if qStat == False:
                 asyncio.run_coroutine_threadsafe(SSchannel.send(
-                    "Querry thread did not answer for 15 seconds.\n--> Assuming crash --> Restarting..."), _loop)
+                    "Querry thread did not answer for 20 seconds.\n--> Assuming crash --> Restarting..."), _loop)
 
                 rQ = Thread(target=restartQuery)
                 rQ.start()
