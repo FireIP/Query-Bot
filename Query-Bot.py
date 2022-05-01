@@ -48,10 +48,10 @@ SSchannelID = [[000000000000000000]]    #replace with channel id of channel the 
 client = discord.Client()
 
 global admins
-admins = [[000000000000000000]] #replace with discord user ID of admin
+admins = [[000000000000000000]]         #replace with discord user ID of admin
 
 global owner
-owner = 000000000000000000      #replace with discord user ID of admin
+owner = 000000000000000000              #replace with discord user ID of admin
 global ownerDM
 
 
