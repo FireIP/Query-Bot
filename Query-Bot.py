@@ -1,12 +1,10 @@
 # Ein Discord-Bot um den Status eines Minecraft servers und die Spieler-Liste in einen discord chat zu schreiben.
 #
 # @author (FireIP)
-# @version (0.12.0)
+# @version (0.13.0)
 #
 #
-#	added multi-server support
-#   added multi-channel support
-#   added multi-admin support
+#	added dns checker
 
 
 import discord
@@ -24,7 +22,11 @@ import json
 
 
 # Konstanten------------------
+global dataJsonPath
 dataJsonPath = "data.json"
+
+global dns
+dns = ["tum-v6.serveminecraft.net", "tum.serveminecraft.net"]
 
 
 # Variablen-------------------
@@ -188,6 +190,13 @@ async def on_message(message):
                     await message.channel.send("Server is online")
                 else:
                     await message.channel.send("Server is offline")
+
+                for actI in range(dns.__len__()):
+                    if not dnsStat[actI]:
+                        await message.channel.send(dns[actI] + " is offline.")
+
+                    if dnsStat[actI]:
+                        await message.channel.send(dns[actI] + " is online.")
             else:
                 await message.channel.send("Query is inactive at the moment. Ask the server owner to start it.")
 
@@ -273,6 +282,16 @@ serverPort = 25565                  #replace with querry port of server
 
 server = MinecraftServer(serverAdress, serverPort)
 
+global dnsServ
+dnsServ = []
+for i in range(dns.__len__()):
+    dnsServ.append(MinecraftServer(dns[i], 25565))
+
+global dnsStat
+dnsStat = []
+for i in range(dns.__len__()):
+    dnsStat.append(True)
+
 global lastQuery
 lastQuery = None
 
@@ -293,6 +312,20 @@ def queryThread():
 
     while q:
         # timeout = Timeout(5)
+
+        #----dns Query----
+        for actI in range(dns.__len__()):
+            try:
+                dnsServ[actI].status()
+            except:
+                if dnsStat[actI]:
+                    sendToAll(dns[actI] + " is offline.")
+                    dnsStat[actI] = False
+            else:
+                if not dnsStat[actI]:
+                    sendToAll(dns[actI] + " is online.")
+                    dnsStat[actI] = True
+
         try:
             query = server.query(tries=1)
 
@@ -352,11 +385,11 @@ def selfDiagnose():
         if q:
             qStat = False
 
-            time.sleep(10)
+            time.sleep(15)
 
             if qStat == False:
                 asyncio.run_coroutine_threadsafe(SSchannel.send(
-                    "Querry thread did not answer for 10 seconds.\n--> Assuming crash --> Restarting..."), _loop)
+                    "Querry thread did not answer for 15 seconds.\n--> Assuming crash --> Restarting..."), _loop)
 
                 rQ = Thread(target=restartQuery)
                 rQ.start()
