@@ -1,10 +1,10 @@
 # Ein Discord-Bot um den Status eines Minecraft servers und die Spieler-Liste in einen discord chat zu schreiben.
 #
 # @author (FireIP)
-# @version (0.11)
+# @version (0.11.1)
 #
 #
-#	Customized Login notifications
+#	fixed timeout restarting the query
 
 
 import discord
@@ -14,6 +14,7 @@ import time
 
 from threading import Thread
 
+from eventlet import Timeout
 from mcstatus import MinecraftServer
 
 global _loop
@@ -202,8 +203,9 @@ def queryThread():
     global _loop
 
     while q:
+        #timeout = Timeout(5)
         try:
-            server.status(tries=1)
+            query = server.query(tries=1)
 
         except:
             if sOnline != False:
@@ -212,7 +214,6 @@ def queryThread():
                 lastQuery = None
 
         else:
-            query = server.query()
             lastQuery = query
 
             if sOnline != True:
@@ -231,8 +232,9 @@ def queryThread():
                         asyncio.run_coroutine_threadsafe(SSchannel.send(i + " is offline."), _loop)
                         # tempName = names.copy()
                         names[i] = False
-
-        qStat = True
+        finally:
+            #timeout.cancel()
+            qStat = True
 
 
 global monitor
