@@ -4,60 +4,7 @@
 # @version (0.13.4)
 #
 #
-#	---0.13.4---
 #	increase respinse time tolerance on dns check
-#
-#	---0.13.3---
-#	fixed looping online offline dns
-#
-#	---0.13.2---
-#	removed tum-v6.serveminecraft.net
-#
-#	---0.13.1---
-#	increased tries on dns
-#
-#	---0.13.0---
-#	added dns checker
-#
-#
-#	---0.12.0---
-#	added multi-server support
-#   added multi-channel support
-#   added multi-admin support
-#
-#
-#	---0.11.2---
-#	fixed sending messages on lobby change
-#   minor improvements
-#
-#	---0.11.1---
-#	fixed timeout restarting the query
-#
-#	---0.11---
-#	Customized Login notifications
-#
-#	---0.10.3---
-#	watchdog accountss for Server ping timeout
-#
-#	---0.10.2---
-#	added delay on start (so connections can be established by host os)
-#
-#	---0.10.1---
-#	fixed indent
-#
-#	---0.10---
-#	added self diagnostic thread for automatic restart of querry
-#	addes function to restart querry
-#	addes function to restart diagnostic thread
-#
-# 	---0.9---
-#	added 'cookie' to help
-#
-#	---0.8---
-#	complete rewrite
-#	speed up querry response times
-#	handeled offline servers
-#	added aditional commands available via Discord
 
 
 import discord
