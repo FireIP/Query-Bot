@@ -1,11 +1,11 @@
 # Ein Discord-Bot um den Status eines Minecraft servers und die Spieler-Liste in einen discord chat zu schreiben.
 #
 # @author (FireIP)
-# @version (0.11.1)
+# @version (0.11.2)
 #
 #
-#	fixed timeout restarting the query
-
+#	fixed sending messages on lobby change
+#   minor improvements
 
 import discord
 
@@ -169,7 +169,7 @@ with open("Names.txt") as f:
             X = line[:-1]
             names[X] = False
         else:
-            names.append(line)
+            names[line] = False
 
 names.setdefault("404", False)
 
@@ -203,7 +203,7 @@ def queryThread():
     global _loop
 
     while q:
-        #timeout = Timeout(5)
+        # timeout = Timeout(5)
         try:
             query = server.query(tries=1)
 
@@ -220,20 +220,32 @@ def queryThread():
                 asyncio.run_coroutine_threadsafe(SSchannel.send("Server is online."), _loop)
                 sOnline = True
 
-            for i in lastQuery.players.names:
-                if names.__contains__(i):
-                    if not names[i]:
-                        asyncio.run_coroutine_threadsafe(SSchannel.send(i + " is online."), _loop)
-                        names[i] = True
-
             for i in names.keys():
                 if not lastQuery.players.names.__contains__(i):
                     if names[i]:
-                        asyncio.run_coroutine_threadsafe(SSchannel.send(i + " is offline."), _loop)
-                        # tempName = names.copy()
-                        names[i] = False
+                        time.sleep(0.75)
+                        try:
+                            tempQuery = server.query(tries=1)
+                        except:
+                            tempQuery = lastQuery
+
+                        if not tempQuery.players.names.__contains__(i):
+                            asyncio.run_coroutine_threadsafe(SSchannel.send(i + " is offline."), _loop)
+                            names[i] = False
+                else:
+                    if not names[i]:
+                        time.sleep(0.75)
+                        try:
+                            tempQuery = server.query(tries=1)
+                        except:
+                            tempQuery = lastQuery
+
+                        if tempQuery.players.names.__contains__(i):
+                            asyncio.run_coroutine_threadsafe(SSchannel.send(i + " is online."), _loop)
+                            names[i] = True
+
         finally:
-            #timeout.cancel()
+            # timeout.cancel()
             qStat = True
 
 
