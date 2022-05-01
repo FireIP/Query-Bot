@@ -1,3 +1,12 @@
+
+#Ein Discord-Bot um den Status eines Minecraft servers und die Spieler-Liste in einen discord chat zu schreiben.
+#
+# @author (FireIP)
+# @version (0.6)
+#
+
+
+
 import discord
 from discord.ext.commands import Bot
 from discord.ext import commands
@@ -79,15 +88,24 @@ async def on_message(message):
         if message.author.id == "000000000000000000":   #replace with discord user ID of admin
             channel = message.channel
             start = message
+            print("Query started!")
             await client.send_message(channel, "Query started!")
 
     elif message.content == "stopQuery":
         if message.author.id == "000000000000000000":   #replace with discord user ID of admin
             q = False
+
+            print("Query stoped!")
+            await client.send_message(channel, "Query stoped!")
+
     elif message.content == "startQuery":
         if message.author.id == "000000000000000000":   #replace with discord user ID of admin
             q = True
+            t = Thread(target=querying)
             t.start()
+
+            print("Query started!")
+            await client.send_message(channel, "Query started!")
 
 
 def querying():
@@ -107,10 +125,10 @@ def querying():
 
     while q:
         # 'status' is supported by all Minecraft servers that are version 1.7 or higher.
-        status = server.status()
+        # status = server.status()
         query = server.query()
         if lastquery != query.players.names:
-            print("The server has {0} players and replied in {1} ms".format(status.players.online, status.latency))
+            # print("The server has {0} players and replied in {1} ms".format(status.players.online, status.latency))
 
             # 'query' has to be enabled in a servers' server.properties file.
             # It may give more information than a ping, such as a full player list or mod information.
@@ -123,7 +141,7 @@ def querying():
                                                                  "The server has the following players online: {0}".format(
                                                                      ", ".join(query.players.names))), _loop)
 
-    # time.sleep(15)
+        time.sleep(30)
 
 
 t = Thread(target=querying)
