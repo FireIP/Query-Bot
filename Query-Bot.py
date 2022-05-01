@@ -1,12 +1,10 @@
 # Ein Discord-Bot um den Status eines Minecraft servers und die Spieler-Liste in einen discord chat zu schreiben.
-# 
-# @author (FireIP) 
-# @version (0.8)
+#
+# @author (FireIP)
+# @version (0.9)
 #
 #
-#	complete rewrite
-#	handeled offline servers
-#	added aditional commands available via Discord
+#	added 'cookie' to help
 
 
 import discord
@@ -130,7 +128,7 @@ async def on_message(message):
 
         elif message.content == "s-h" or message.content == "s-help":
             await message.channel.send(
-                "Admin:\n**s-stopQuery** *stops the query*\n**s-startQuery** *starts the query*\n**s-restartQuery** *restarts the query*\n\nUser:\n**s-Players (s-p, s-P)** *lists players on server*\n**s-Status (s-s, s-S)** *checks if server is online*\n**s-Version (s-v, s-V)** *returns the version number the server is running*\n**s-motd (s-m, s-M)** *returns the message of the day/description of the server*\n**s-h (s-help)** *shows this list*")
+                "Admin:\n**s-stopQuery** *stops the query*\n**s-startQuery** *starts the query*\n**s-restartQuery** *restarts the query*\n\nUser:\n**s-Players (s-p, s-P)** *lists players on server*\n**s-Status (s-s, s-S)** *checks if server is online*\n**s-Version (s-v, s-V)** *returns the version number the server is running*\n**s-motd (s-m, s-M)** *returns the message of the day/description of the server*\n**s-h (s-help)** *shows this list*\n**cookie** *spawns a cookie*")
 
 
 global q
@@ -176,7 +174,8 @@ def queryThread():
                 sOnline = True
 
 
-time.sleep(30)
+# time.sleep(30)
+
 
 qt = Thread(target=queryThread)
 
