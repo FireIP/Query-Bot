@@ -1,10 +1,10 @@
 # Ein Discord-Bot um den Status eines Minecraft servers und die Spieler-Liste in einen discord chat zu schreiben.
 #
 # @author (FireIP)
-# @version (0.10.1)
+# @version (0.10.2)
 #
 #
-#	fixed indent
+#	added delay on start (so connections can be established by host os)
 
 import discord
 
@@ -251,6 +251,8 @@ def restartDiagnostic():
     print("Self-Diagnose started!")
     asyncio.run_coroutine_threadsafe(SSchannel.send("Self-Diagnose sucessfully restarted!"), _loop)
 
+
+time.sleep(10)
 
 qt = Thread(target=queryThread)
 dt = Thread(target=selfDianose)
