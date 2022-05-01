@@ -1,13 +1,10 @@
 # Ein Discord-Bot um den Status eines Minecraft servers und die Spieler-Liste in einen discord chat zu schreiben.
 #
 # @author (FireIP)
-# @version (0.10)
+# @version (0.10.1)
 #
 #
-#	added self diagnostic thread for automatic restart of querry
-#	added function to restart querry
-#	added function to restart diagnostic thread
-
+#	fixed indent
 
 import discord
 
@@ -32,7 +29,7 @@ async def on_ready():
     global _loop
     global SSchannel
 
-    SSchannel = client.get_channel('000000000000000000')  #replace with channel id of channel the bot should write to
+    SSchannel = client.get_channel(000000000000000000)  #replace with channel id of channel the bot should write to
 
     await SSchannel.send("Bot is online")
     print("Bot is online and connected to Discord")
@@ -56,14 +53,14 @@ async def on_message(message):
     elif message.content.startswith("s-"):
 
         if message.content == "s-stopQuery":
-            if message.author.id == "000000000000000000":   #replace with discord user ID of admin
+            if message.author.id == 000000000000000000:   #replace with discord user ID of admin
                 q = False
 
                 print("Query stoped!")
                 await message.channel.send("Query stoped!")
 
         elif message.content == "s-startQuery":
-            if message.author.id == "000000000000000000":   #replace with discord user ID of admin
+            if message.author.id == 000000000000000000:   #replace with discord user ID of admin
                 if q == False:
                     q = True
 
@@ -74,7 +71,7 @@ async def on_message(message):
                 await message.channel.send("Query started!")
 
         elif message.content == "s-restartQuery":
-            if message.author.id == "000000000000000000":   #replace with discord user ID of admin
+            if message.author.id == 000000000000000000:   #replace with discord user ID of admin
                 q = False
 
                 await message.channel.send("Restarting Query...")
@@ -138,6 +135,9 @@ async def on_message(message):
 global q
 q = True
 
+global qStat
+qStat = False
+
 global server
 serverAdress = "000.000.000.000"    #replace with own IP adress or domain
 serverPort = 25565                  #replace with querry port of server
@@ -179,7 +179,7 @@ def queryThread():
                 asyncio.run_coroutine_threadsafe(SSchannel.send("Server is online."), _loop)
                 sOnline = True
 
-    qStat = True
+        qStat = True
 
 
 global monitor
