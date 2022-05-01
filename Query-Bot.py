@@ -2,10 +2,10 @@
 #Ein Discord-Bot um den Status eines Minecraft servers und die Spieler-Liste in einen discord chat zu schreiben.
 #
 # @author (FireIP)
-# @version (0.7)
+# @version (0.7.1)
 #
 #
-#	preselection des Text-Channels
+#	message when bot comes online
 
 
 
@@ -61,6 +61,7 @@ async def on_ready():
     channel = client.get_channel('000000000000000000')  #replace with channel id of channel the bot should write to
 
     print("Bot is online and connected to Discord")  # This will be called when the bot connects to the server
+    await client.send_message(channel, "Bot is online")
 
     query = server.query()
     lastquery = query.players.names
