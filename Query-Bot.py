@@ -26,7 +26,7 @@ global dataJsonPath
 dataJsonPath = "data.json"
 
 global dns
-dns = ["tum-v6.serveminecraft.net", "tum.serveminecraft.net"]
+dns = ["text.test.net"]    #fill with dns connections to check
 
 
 # Variablen-------------------
