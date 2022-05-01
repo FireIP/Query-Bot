@@ -1,10 +1,12 @@
 # Ein Discord-Bot um den Status eines Minecraft servers und die Spieler-Liste in einen discord chat zu schreiben.
 #
 # @author (FireIP)
-# @version (0.9.1)
+# @version (0.10)
 #
 #
-#	added 'cookie' to help
+#	added self diagnostic thread for automatic restart of querry
+#	added function to restart querry
+#	added function to restart diagnostic thread
 
 
 import discord
@@ -38,6 +40,7 @@ async def on_ready():
     _loop = asyncio.get_event_loop()
 
     qt.start()
+    dt.start()
 
 
 @client.event
@@ -76,7 +79,7 @@ async def on_message(message):
 
                 await message.channel.send("Restarting Query...")
 
-                time.sleep(31)
+                time.sleep(5)
 
                 print("Query stoped!")
                 await message.channel.send("Query stoped!")
@@ -89,6 +92,7 @@ async def on_message(message):
                 print("Query started!")
                 await message.channel.send("Query started!")
                 await message.channel.send("Query sucessfully restarted!")
+
 
         elif message.content == "s-Players" or message.content == "s-p" or message.content == "s-P":
             if q == True and sOnline == True:
@@ -149,6 +153,8 @@ sOnline = False
 
 def queryThread():
     global q
+    global qStat
+
     global server
     global lastQuery
     global sOnline
@@ -173,10 +179,80 @@ def queryThread():
                 asyncio.run_coroutine_threadsafe(SSchannel.send("Server is online."), _loop)
                 sOnline = True
 
+    qStat = True
 
-# time.sleep(30)
+
+global monitor
+monitor = True
+
+
+def selfDianose():
+    global q
+    global qStat
+
+    while (monitor):
+        time.sleep(30)
+
+        if q:
+            qStat = False
+
+            time.sleep(5)
+
+            if qStat == False:
+                asyncio.run_coroutine_threadsafe(
+                    SSchannel.send("Querry thread did not answer for 5 seconds.\n--> Assuming crash --> Restarting..."),
+                    _loop)
+
+                rQ = Thread(target=restartQuery)
+                rQ.start()
+
+                rD = Thread(target=restartDiagnostic)
+                rD.start()
+
+
+def restartQuery():
+    global q
+    global qStat
+
+    q = False
+    qStat = False
+
+    asyncio.run_coroutine_threadsafe(SSchannel.send("Restarting Query..."), _loop)
+    time.sleep(5)
+    asyncio.run_coroutine_threadsafe(SSchannel.send("Query stoped!"), _loop)
+    print("Query stoped!")
+
+    q = True
+    qt = Thread(target=queryThread)
+    qt.start()
+
+    asyncio.run_coroutine_threadsafe(SSchannel.send("Query started!"), _loop)
+    print("Query started!")
+    asyncio.run_coroutine_threadsafe(SSchannel.send("Query sucessfully restarted!"), _loop)
+
+
+def restartDiagnostic():
+    global monitor
+    global qStat
+
+    monitor = False
+    qStat = False
+
+    asyncio.run_coroutine_threadsafe(SSchannel.send("Restarting Self-Diagnose..."), _loop)
+    time.sleep(36)
+    asyncio.run_coroutine_threadsafe(SSchannel.send("Self-Diagnose stoped!"), _loop)
+    print("Self-Diagnose stoped!")
+
+    monitor = True
+    dt = Thread(target=selfDianose)
+    dt.start()
+
+    asyncio.run_coroutine_threadsafe(SSchannel.send("Self-Diagnose started!"), _loop)
+    print("Self-Diagnose started!")
+    asyncio.run_coroutine_threadsafe(SSchannel.send("Self-Diagnose sucessfully restarted!"), _loop)
 
 
 qt = Thread(target=queryThread)
+dt = Thread(target=selfDianose)
 
 client.run("xxxxxxxxxxxxxxxxxxxxxxxx.xxxxxx.xxxxxxxxx-xxxxxxxxxxxxxxxxx")  # Replace token with your bots token
