@@ -1,11 +1,11 @@
 # Ein Discord-Bot um den Status eines Minecraft servers und die Spieler-Liste in einen discord chat zu schreiben.
 #
 # @author (FireIP)
-# @version (0.10.3)
+# @version (0.11)
 #
 #
-#	handels waterfall servers
-#	watchdog accountss for Server ping timeout
+#	Customized Login notifications
+
 
 import discord
 
@@ -14,9 +14,7 @@ import time
 
 from threading import Thread
 
-#from mcstatus import MinecraftServer
-
-from mcipc.query import Client
+from mcstatus import MinecraftServer
 
 global _loop
 _loop = None
@@ -93,6 +91,33 @@ async def on_message(message):
                 await message.channel.send("Query started!")
                 await message.channel.send("Query sucessfully restarted!")
 
+        elif message.content[:10] == "s-addWatch":
+            if message.author.id == 000000000000000000:   #replace with discord user ID of admin
+                temp = []
+                for n in names.keys():
+                    temp.append(n + '\n')
+
+                temp.append(message.content[11:] + '\n')
+                nameFile = open("Names.txt", 'w')
+                nameFile.writelines(temp)
+                nameFile.close()
+                names[message.content[11:]] = False
+
+                await message.channel.send("Added " + message.content[11:] + " to watchlist.")
+
+        elif message.content[:10] == "s-remWatch":
+            if message.author.id == 000000000000000000:   #replace with discord user ID of admin
+                del names[message.content[11:]]
+                temp = []
+                for n in names.keys():
+                    temp.append(n + '\n')
+
+                nameFile = open("Names.txt", 'w')
+                nameFile.writelines(temp)
+                nameFile.close()
+
+                await message.channel.send("Removed " + message.content[11:] + " from watchlist.")
+
 
         elif message.content == "s-Players" or message.content == "s-p" or message.content == "s-P":
             if q == True and sOnline == True:
@@ -135,6 +160,18 @@ async def on_message(message):
                 "Admin:\n**s-stopQuery** *stops the query*\n**s-startQuery** *starts the query*\n**s-restartQuery** *restarts the query*\n\nUser:\n**s-Players (s-p, s-P)** *lists players on server*\n**s-Status (s-s, s-S)** *checks if server is online*\n**s-Version (s-v, s-V)** *returns the version number the server is running*\n**s-motd (s-m, s-M)** *returns the message of the day/description of the server*\n**s-h (s-help)** *shows this list*\n**cookie** *spawns a cookie*")
 
 
+names = {}
+with open("Names.txt") as f:
+    for line in f:
+
+        if line[-1:] == "\n":
+            X = line[:-1]
+            names[X] = False
+        else:
+            names.append(line)
+
+names.setdefault("404", False)
+
 global q
 q = True
 
@@ -145,7 +182,7 @@ global server
 serverAdress = "000.000.000.000"    #replace with own IP adress or domain
 serverPort = 25565                  #replace with querry port of server
 
-server = Client(serverAdress, serverPort, timeout=1.5)
+server = MinecraftServer(serverAdress, serverPort)
 
 global lastQuery
 lastQuery = None
@@ -166,28 +203,40 @@ def queryThread():
 
     while q:
         try:
-            server.stats(full=True)
-        except Exception as e:
-            print(e.__class__)
-            print(e.__cause__)
+            server.status(tries=1)
+
+        except:
             if sOnline != False:
                 asyncio.run_coroutine_threadsafe(SSchannel.send("Server is offline."), _loop)
                 sOnline = False
                 lastQuery = None
 
         else:
-            query = server.stats(full=True)
+            query = server.query()
             lastQuery = query
 
             if sOnline != True:
                 asyncio.run_coroutine_threadsafe(SSchannel.send("Server is online."), _loop)
                 sOnline = True
 
+            for i in lastQuery.players.names:
+                if names.__contains__(i):
+                    if not names[i]:
+                        asyncio.run_coroutine_threadsafe(SSchannel.send(i + " is online."), _loop)
+                        names[i] = True
+
+            for i in names.keys():
+                if not lastQuery.players.names.__contains__(i):
+                    if names[i]:
+                        asyncio.run_coroutine_threadsafe(SSchannel.send(i + " is offline."), _loop)
+                        # tempName = names.copy()
+                        names[i] = False
+
         qStat = True
 
 
 global monitor
-monitor = False
+monitor = True
 
 
 def selfDiagnose():
@@ -217,11 +266,13 @@ def restartQuery():
     global q
     global qStat
 
+    global qt
+
     q = False
     qStat = False
 
     asyncio.run_coroutine_threadsafe(SSchannel.send("Restarting Query..."), _loop)
-    Thread.join(queryThread)
+    Thread.join(qt)
     asyncio.run_coroutine_threadsafe(SSchannel.send("Query stoped!"), _loop)
     print("Query stoped!")
 
@@ -238,11 +289,13 @@ def restartDiagnostic():
     global monitor
     global qStat
 
+    global dt
+
     monitor = False
     qStat = False
 
     asyncio.run_coroutine_threadsafe(SSchannel.send("Restarting Self-Diagnose..."), _loop)
-    Thread.join(selfDiagnose)
+    Thread.join(dt)
     asyncio.run_coroutine_threadsafe(SSchannel.send("Self-Diagnose stoped!"), _loop)
     print("Self-Diagnose stoped!")
 
@@ -257,7 +310,9 @@ def restartDiagnostic():
 
 time.sleep(10)
 
+global qt
 qt = Thread(target=queryThread)
+global dt
 dt = Thread(target=selfDiagnose)
 
 client.run("xxxxxxxxxxxxxxxxxxxxxxxx.xxxxxx.xxxxxxxxx-xxxxxxxxxxxxxxxxx")  # Replace token with your bots token
