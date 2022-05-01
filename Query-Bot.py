@@ -2,8 +2,10 @@
 #Ein Discord-Bot um den Status eines Minecraft servers und die Spieler-Liste in einen discord chat zu schreiben.
 #
 # @author (FireIP)
-# @version (0.6)
+# @version (0.7)
 #
+#
+#	preselection des Text-Channels
 
 
 
@@ -56,6 +58,7 @@ async def on_ready():
     global _loop
 
     global channel
+    channel = client.get_channel('000000000000000000')  #replace with channel id of channel the bot should write to
 
     print("Bot is online and connected to Discord")  # This will be called when the bot connects to the server
 
@@ -71,41 +74,40 @@ async def on_ready():
 
     t.start()
 
-
 @client.event
 async def on_message(message):
-    global channel
-    global Client
-    global client
+	global Client
+	global client
 
-    global q
+	global q
 
-    global start
 
-    if message.content == "cookie":
-        await client.send_message(message.channel, ":cookie:")  # responds with Cookie emoji when someone says "cookie"
-    elif message.content == "!start!":
-        if message.author.id == "000000000000000000":   #replace with discord user ID of admin
-            channel = message.channel
-            start = message
-            print("Query started!")
-            await client.send_message(channel, "Query started!")
+	global channel
 
-    elif message.content == "stopQuery":
-        if message.author.id == "000000000000000000":   #replace with discord user ID of admin
-            q = False
+	if message.content == "cookie":
+		await client.send_message(message.channel, ":cookie:") #responds with Cookie emoji when someone says "cookie"
+#	elif message.content == "!start!":
+#		if message.author.id == "000000000000000000":   #replace with discord user ID of admin
+#			channel = message.channel
+#			start = message
+#			print("Query channel changed!")
+#			await client.send_message(channel, "Query started!")
 
-            print("Query stoped!")
-            await client.send_message(channel, "Query stoped!")
+	elif message.content == "stopQuery":
+		if message.author.id == "000000000000000000":   #replace with discord user ID of admin
+			q = False
 
-    elif message.content == "startQuery":
-        if message.author.id == "000000000000000000":   #replace with discord user ID of admin
-            q = True
-            t = Thread(target=querying)
-            t.start()
+			print("Query stoped!")
+			await client.send_message(channel, "Query stoped!")
 
-            print("Query started!")
-            await client.send_message(channel, "Query started!")
+	elif message.content == "startQuery":
+		if message.author.id == "000000000000000000":   #replace with discord user ID of admin
+			q = True
+			t = Thread(target=querying)
+			t.start()
+
+			print("Query started!")
+			await client.send_message(channel, "Query started!")
 
 
 def querying():
@@ -116,7 +118,6 @@ def querying():
     global server
 
     global channel
-    global start
 
     global Client
     global client
