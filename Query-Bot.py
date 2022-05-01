@@ -1,8 +1,11 @@
 # Ein Discord-Bot um den Status eines Minecraft servers und die Spieler-Liste in einen discord chat zu schreiben.
 #
 # @author (FireIP)
-# @version (0.13.3)
+# @version (0.13.4)
 #
+#
+#	---0.13.4---
+#	increase respinse time tolerance on dns check
 #
 #	---0.13.3---
 #	fixed looping online offline dns
@@ -76,7 +79,11 @@ global dataJsonPath
 dataJsonPath = "data.json"
 
 global dns
-dns = ["text.test.net"]    #fill with dns connections to check
+dns = ["text.test.net"]             #fill with dns connections to check
+
+serverAdress = "000.000.000.000"    #replace with own IP adress or domain
+serverPort = 25565                  #replace with querry port of server
+
 
 
 # Variablen-------------------
@@ -116,6 +123,11 @@ async def on_ready():
         SSchannel.append([])
         for i in range(len(SSchannelID[s])):
             SSchannel[s].append(client.get_channel(SSchannelID[s][i]))
+
+
+    # for s in range(len(SSchannelID)):
+    #     for i in range(len(SSchannelID[s])):
+    #         SSchannel[s][i] = client.get_channel(SSchannelID[s][i])
 
     sendToAll("Bot is online")
     print("Bot is online and connected to Discord")
@@ -322,9 +334,6 @@ global qStat
 qStat = False
 
 global server
-serverAdress = "000.000.000.000"    #replace with own IP adress or domain
-serverPort = 25565                  #replace with querry port of server
-
 server = MinecraftServer(serverAdress, serverPort)
 
 global dnsServ
@@ -364,14 +373,23 @@ def queryThread():
                 dnsServ[actI].status(tries=5)
             except:
                 if dnsStat[actI] == True:
-                    sendToAll(dns[actI] + " is offline.")
-                    dnsStat[actI] = False
                     time.sleep(1)
+                    try:
+                        dnsServ[actI].status(tries=5)
+                    except:
+                        sendToAll(dns[actI] + " is offline.")
+                        dnsStat[actI] = False
+                        time.sleep(1)
             else:
                 if dnsStat[actI] == False:
-                    sendToAll(dns[actI] + " is online.")
-                    dnsStat[actI] = True
                     time.sleep(1)
+                    try:
+                        dnsServ[actI].status(tries=5)
+                    except: pass
+                    else:
+                        sendToAll(dns[actI] + " is online.")
+                        dnsStat[actI] = True
+                        time.sleep(1)
 
         try:
             query = server.query(tries=1)
@@ -492,7 +510,7 @@ def restartDiagnostic():
     sendToAll("Self-Diagnose sucessfully restarted!")
 
 
-#time.sleep(10)
+time.sleep(10)
 
 global qt
 qt = Thread(target=queryThread)
