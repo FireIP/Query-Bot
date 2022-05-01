@@ -1,18 +1,18 @@
 # Ein Discord-Bot um den Status eines Minecraft servers und die Spieler-Liste in einen discord chat zu schreiben.
 #
 # @author (FireIP)
-# @version (0.13.1)
+# @version (0.13.2)
 #
 #
 #	---0.13.2---
 #	removed tum-v6.serveminecraft.net
-#
 #
 #	---0.13.1---
 #	increased tries on dns
 #
 #	---0.13.0---
 #	added dns checker
+#
 #
 #	---0.12.0---
 #	added multi-server support
