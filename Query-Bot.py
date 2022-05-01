@@ -1,11 +1,13 @@
 # Ein Discord-Bot um den Status eines Minecraft servers und die Spieler-Liste in einen discord chat zu schreiben.
 #
 # @author (FireIP)
-# @version (0.11.2)
+# @version (0.12.0)
 #
 #
-#	fixed sending messages on lobby change
-#   minor improvements
+#	added multi-server support
+#   added multi-channel support
+#   added multi-admin support
+
 
 import discord
 
@@ -14,29 +16,67 @@ import time
 
 from threading import Thread
 
-from eventlet import Timeout
 from mcstatus import MinecraftServer
 
+import os
+
+import json
+
+
+# Konstanten------------------
+dataJsonPath = "data.json"
+
+
+# Variablen-------------------
 global _loop
 _loop = None
 
+global serverDict
+serverDict = {"000000000000000000": 0}  #replace with discord server ID of server the bot is on
+
 global SSchannel
-SSchannel = None
+SSchannel = []
+global SSchannelID
+SSchannelID = [[000000000000000000]]    #replace with channel id of channel the bot should write to
 
 client = discord.Client()
+
+global admins
+admins = [[000000000000000000]] #replace with discord user ID of admin
+
+global owner
+owner = 000000000000000000      #replace with discord user ID of admin
+global ownerDM
 
 
 @client.event
 async def on_ready():
     global _loop
     global SSchannel
+    global SSchannelID
+    global ownerDM
+    global owner
 
-    SSchannel = client.get_channel(000000000000000000)  #replace with channel id of channel the bot should write to
-
-    await SSchannel.send("Bot is online")
-    print("Bot is online and connected to Discord")
+    ownerDM = client.get_user(owner)
 
     _loop = asyncio.get_event_loop()
+    for s in range(len(SSchannelID)):
+        SSchannel.append([])
+        for i in range(len(SSchannelID[s])):
+            SSchannel[s].append(client.get_channel(SSchannelID[s][i]))
+
+
+    # for s in range(len(SSchannelID)):
+    #     for i in range(len(SSchannelID[s])):
+    #         SSchannel[s][i] = client.get_channel(SSchannelID[s][i])
+
+    sendToAll("Bot is online")
+    print("Bot is online and connected to Discord")
+
+    for sId in serverDict.keys():
+        if len(admins[serverDict[sId]]) == 0:
+            if not sendToServer("Es gibt keine admins auf diesem Server.", sId):
+                asyncio.run_coroutine_threadsafe(ownerDM.send("Es gibt keine admins auf diem Server: \'" + sId + "\'"), _loop)
 
     qt.start()
     dt.start()
@@ -48,6 +88,8 @@ async def on_message(message):
     global q
     global sOnline
     global lastQuery
+    global admins
+    global ownerDM
 
     if message.content == "cookie":
         await message.channel.send(":cookie:")
@@ -55,14 +97,14 @@ async def on_message(message):
     elif message.content.startswith("s-"):
 
         if message.content == "s-stopQuery":
-            if message.author.id == 000000000000000000:   #replace with discord user ID of admin
+            if message.author.id in admins[serverDict[str(message.guild.id)]]:
                 q = False
 
                 print("Query stoped!")
                 await message.channel.send("Query stoped!")
 
         elif message.content == "s-startQuery":
-            if message.author.id == 000000000000000000:   #replace with discord user ID of admin
+            if message.author.id in admins[serverDict[str(message.guild.id)]]:
                 if q == False:
                     q = True
 
@@ -73,7 +115,7 @@ async def on_message(message):
                 await message.channel.send("Query started!")
 
         elif message.content == "s-restartQuery":
-            if message.author.id == 000000000000000000:   #replace with discord user ID of admin
+            if message.author.id in admins[serverDict[str(message.guild.id)]]:
                 q = False
 
                 await message.channel.send("Restarting Query...")
@@ -92,30 +134,41 @@ async def on_message(message):
                 await message.channel.send("Query started!")
                 await message.channel.send("Query sucessfully restarted!")
 
-        elif message.content[:10] == "s-addWatch":
-            if message.author.id == 000000000000000000:   #replace with discord user ID of admin
-                temp = []
-                for n in names.keys():
-                    temp.append(n + '\n')
+        elif message.content == "s-addThisChannel":
+            if not serverDict.keys().__contains__(str(message.guild.id)):
+                serverDict[str(message.guild.id)] = serverDict.keys().__len__()
+                SSchannelID.append([message.channel.id])
+                SSchannel.append([message.channel])
+                sendToServer("This server does not jet have an Admin promoting sender of s-addThisChannel.", message.guild.id)
+                admins.append([message.author.id])
+                saveCurrData()
+                await message.channel.send("Channel was added.")
 
-                temp.append(message.content[11:] + '\n')
-                nameFile = open("Names.txt", 'w')
-                nameFile.writelines(temp)
-                nameFile.close()
+            elif message.author.id in admins[serverDict[str(message.guild.id)]]:
+                SSchannelID[serverDict[str(message.guild.id)]].append(message.channel.id)
+                SSchannel[serverDict[str(message.guild.id)]].append(message.channel)
+                saveCurrData()
+                await message.channel.send("Channel was added.")
+
+        elif message.content[:13] == "s-promoteById":
+            if message.author.id in admins[serverDict[str(message.guild.id)]]:
+                admins[serverDict[str(message.guild.id)]].append(int(message.content[14:]))
+                saveCurrData()
+                await message.channel.send("Promoted " + message.content[14:])
+            else:
+                await message.channel.send("Du bist kein Admin!")
+
+        elif message.content[:10] == "s-addWatch":
+            if message.author.id == owner:
                 names[message.content[11:]] = False
+                saveCurrData()
 
                 await message.channel.send("Added " + message.content[11:] + " to watchlist.")
 
         elif message.content[:10] == "s-remWatch":
-            if message.author.id == 000000000000000000:   #replace with discord user ID of admin
+            if message.author.id == owner:
                 del names[message.content[11:]]
-                temp = []
-                for n in names.keys():
-                    temp.append(n + '\n')
-
-                nameFile = open("Names.txt", 'w')
-                nameFile.writelines(temp)
-                nameFile.close()
+                saveCurrData()
 
                 await message.channel.send("Removed " + message.content[11:] + " from watchlist.")
 
@@ -158,20 +211,55 @@ async def on_message(message):
 
         elif message.content == "s-h" or message.content == "s-help":
             await message.channel.send(
-                "Admin:\n**s-stopQuery** *stops the query*\n**s-startQuery** *starts the query*\n**s-restartQuery** *restarts the query*\n\nUser:\n**s-Players (s-p, s-P)** *lists players on server*\n**s-Status (s-s, s-S)** *checks if server is online*\n**s-Version (s-v, s-V)** *returns the version number the server is running*\n**s-motd (s-m, s-M)** *returns the message of the day/description of the server*\n**s-h (s-help)** *shows this list*\n**cookie** *spawns a cookie*")
+                "Admin:\n**s-stopQuery** *stops the query*\n**s-startQuery** *starts the query*\n**s-restartQuery** "
+                "*restarts the query*\n**s-addThisChannel** *adds this channel to list of info "
+                "channels*\n\nUser:\n**s-Players (s-p, s-P)** *lists players on server*\n**s-Status (s-s, "
+                "s-S)** *checks if server is online*\n**s-Version (s-v, s-V)** *returns the version number the server "
+                "is running*\n**s-motd (s-m, s-M)** *returns the message of the day/description of the server*\n**s-h "
+                "(s-help)** *shows this list*\n**cookie** *spawns a cookie*")
 
 
+global names
 names = {}
-with open("Names.txt") as f:
-    for line in f:
 
-        if line[-1:] == "\n":
-            X = line[:-1]
-            names[X] = False
-        else:
-            names[line] = False
+def saveCurrData():
+    global serverDict, SSchannelID, admins, owner, names
+    if os.path.isfile(dataJsonPath):
+        os.remove(dataJsonPath)
 
-names.setdefault("404", False)
+    remF = open(dataJsonPath, 'x')
+    remD = [serverDict, SSchannelID, admins, owner, names]
+    json.dump(remD, remF)
+    remF.close()
+
+
+def loadCurrData():
+    global serverDict, SSchannelID, admins, owner, names
+    if os.path.isfile(dataJsonPath):
+        remF = open(dataJsonPath, 'r')
+        serverDict, SSchannelID, admins, owner, names = json.load(remF)
+        remF.close()
+    names.setdefault("404", False)
+
+
+def sendToAll(message):
+    global SSchannel, admins, owner, names, _loop
+    for s in SSchannel:
+        for i in s:
+            asyncio.run_coroutine_threadsafe(i.send(message), _loop)
+
+
+def sendToServer(message, serverId):
+    global serverDict, SSchannel, admins, owner, names, _loop
+    s = serverDict[str(serverId)]
+    for i in SSchannel[s]:
+        try:
+            asyncio.run_coroutine_threadsafe(i.send(message), _loop)
+            return True
+        except:
+            return False
+
+
 
 global q
 q = True
@@ -201,6 +289,7 @@ def queryThread():
     global sOnline
     global SSchannel
     global _loop
+    global ownerDM
 
     while q:
         # timeout = Timeout(5)
@@ -209,7 +298,7 @@ def queryThread():
 
         except:
             if sOnline != False:
-                asyncio.run_coroutine_threadsafe(SSchannel.send("Server is offline."), _loop)
+                sendToAll("Server is offline.")
                 sOnline = False
                 lastQuery = None
 
@@ -217,7 +306,7 @@ def queryThread():
             lastQuery = query
 
             if sOnline != True:
-                asyncio.run_coroutine_threadsafe(SSchannel.send("Server is online."), _loop)
+                sendToAll("Server is online.")
                 sOnline = True
 
             for i in names.keys():
@@ -230,7 +319,7 @@ def queryThread():
                             tempQuery = lastQuery
 
                         if not tempQuery.players.names.__contains__(i):
-                            asyncio.run_coroutine_threadsafe(SSchannel.send(i + " is offline."), _loop)
+                            asyncio.run_coroutine_threadsafe(ownerDM.send(i + " is offline."), _loop)
                             names[i] = False
                 else:
                     if not names[i]:
@@ -241,7 +330,7 @@ def queryThread():
                             tempQuery = lastQuery
 
                         if tempQuery.players.names.__contains__(i):
-                            asyncio.run_coroutine_threadsafe(SSchannel.send(i + " is online."), _loop)
+                            asyncio.run_coroutine_threadsafe(ownerDM.send(i + " is online."), _loop)
                             names[i] = True
 
         finally:
@@ -285,18 +374,18 @@ def restartQuery():
     q = False
     qStat = False
 
-    asyncio.run_coroutine_threadsafe(SSchannel.send("Restarting Query..."), _loop)
+    sendToAll("Restarting Query...")
     Thread.join(qt)
-    asyncio.run_coroutine_threadsafe(SSchannel.send("Query stoped!"), _loop)
+    sendToAll("Query stoped!")
     print("Query stoped!")
 
     q = True
     qt = Thread(target=queryThread)
     qt.start()
 
-    asyncio.run_coroutine_threadsafe(SSchannel.send("Query started!"), _loop)
+    sendToAll("Query started!")
     print("Query started!")
-    asyncio.run_coroutine_threadsafe(SSchannel.send("Query sucessfully restarted!"), _loop)
+    sendToAll("Query sucessfully restarted!")
 
 
 def restartDiagnostic():
@@ -308,18 +397,18 @@ def restartDiagnostic():
     monitor = False
     qStat = False
 
-    asyncio.run_coroutine_threadsafe(SSchannel.send("Restarting Self-Diagnose..."), _loop)
+    sendToAll("Restarting Self-Diagnose...")
     Thread.join(dt)
-    asyncio.run_coroutine_threadsafe(SSchannel.send("Self-Diagnose stoped!"), _loop)
+    sendToAll("Self-Diagnose stoped!")
     print("Self-Diagnose stoped!")
 
     monitor = True
     dt = Thread(target=selfDiagnose)
     dt.start()
 
-    asyncio.run_coroutine_threadsafe(SSchannel.send("Self-Diagnose started!"), _loop)
+    sendToAll("Self-Diagnose started!")
     print("Self-Diagnose started!")
-    asyncio.run_coroutine_threadsafe(SSchannel.send("Self-Diagnose sucessfully restarted!"), _loop)
+    sendToAll("Self-Diagnose sucessfully restarted!")
 
 
 time.sleep(10)
@@ -328,5 +417,8 @@ global qt
 qt = Thread(target=queryThread)
 global dt
 dt = Thread(target=selfDiagnose)
+
+#----------------------------start
+loadCurrData()
 
 client.run("xxxxxxxxxxxxxxxxxxxxxxxx.xxxxxx.xxxxxxxxx-xxxxxxxxxxxxxxxxx")  # Replace token with your bots token
